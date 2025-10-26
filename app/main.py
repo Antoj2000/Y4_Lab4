@@ -39,7 +39,7 @@ def health():
 
 # --- Courses ---
 # Add a course
-@app.post("/api/courses", response_model=CourseRead, status_code=201, summary="You could add details")
+@app.post("/api/courses", response_model=CourseRead, status_code=201, summary="List all courses")
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     db_course = CourseDB(**course.model_dump())
     db.add(db_course)
