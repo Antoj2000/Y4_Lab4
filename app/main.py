@@ -42,7 +42,7 @@ def health():
 
 # --- Courses ---
 # Add a course
-@app.post("/api/courses", response_model=CourseRead, status_code=201, summary="List all courses")
+@app.post("/api/courses", response_model=CourseRead, status_code=201, summary="Create a course")
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     db_course = CourseDB(**course.model_dump())
     db.add(db_course)
@@ -94,7 +94,7 @@ def get_project_with_owner(project_id: int, db: Session = Depends(get_db)):
 
 # Update Project
 @app.put("/api/projects/update/{project_id}", response_model=ProjectRead)
-def update_user(project_id: int, payload: ProjectCreate, db: Session = Depends(get_db)):
+def update_project(project_id: int, payload: ProjectCreate, db: Session = Depends(get_db)):
     proj = db.get(ProjectDB, project_id)
     if not proj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
