@@ -7,8 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from .database import SessionLocal, engine
 from .schemas import (
     UserCreate, UserRead,
+    UserUpdate,
     CourseCreate, CourseRead,
     ProjectCreate, ProjectRead,
+    ProjectUpdate,
     ProjectReadWithOwner, ProjectCreateForUser
 )
 from .models import Base, UserDB, CourseDB, ProjectDB
@@ -31,7 +33,8 @@ def commit_or_rollback(db: Session, error_msg: str):
     try:
         db.commit()
     except IntegrityError:
-        db.rollback
+        db.rollback()
+        HTTPException(status_code=409, detail=error_msg)
 
 @app.get("/health")
 def health():
@@ -87,6 +90,39 @@ def get_project_with_owner(project_id: int, db: Session = Depends(get_db)):
     proj = db.execute(stmt).scalar_one_or_none()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
+    return proj
+
+# Update Project
+@app.put("/api/projects/update/{project_id}", response_model=ProjectRead)
+def update_user(project_id: int, payload: ProjectCreate, db: Session = Depends(get_db)):
+    proj = db.get(ProjectDB, project_id)
+    if not proj:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    for key, value in payload.model_dump().items():
+        setattr(proj, key, value)
+    try: 
+        db.commit()
+        db.refresh(proj)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project already exists")
+    return proj
+
+# Patch Project
+@app.patch("/api/projects/patch/{project_id}", response_model=ProjectRead)
+def patch_project(project_id: int, payload: ProjectUpdate, db: Session = Depends(get_db)):
+    proj = db.get(ProjectDB, project_id)
+    if not proj:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(proj, key, value)
+    try:
+        db.commit()
+        db.refresh(proj)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Project already exists")
+
     return proj
 
 
@@ -165,8 +201,25 @@ def update_user(users_id: int, payload: UserCreate, db: Session = Depends(get_db
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or Student ID already exists")
     return user
-    
 
+# Patch User
+@app.patch("/api/users/patch/{users_id}", response_model=UserRead)
+def patch_user(users_id: int, payload: UserUpdate, db: Session = Depends(get_db)):
+    user = db.get(UserDB, users_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(user, key, value)
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email or Student ID already exists")
+
+    return user
+
+    
 #Delete User
 @app.delete("/api/users/delete/{users_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(users_id: int, db: Session = Depends(get_db)):

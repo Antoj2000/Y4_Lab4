@@ -6,7 +6,7 @@ from annotated_types import Ge, Le
 
 # ---------- Reusable type aliases ----------
 NameStr = Annotated[str, StringConstraints(min_length=2, max_length=50)]
-StudentID = Annotated[str, constr(pattern=r'^S\d{7}$')]
+StudentID = Annotated[str, StringConstraints(pattern=r'^S\d{7}$')]
 CodeStr = Annotated[str, StringConstraints(min_length=1, max_length=32)]
 CourseNameStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
 ProjectNameStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
@@ -30,6 +30,13 @@ class UserRead(BaseModel):
     email: EmailStr
     age: int
     model_config = ConfigDict(from_attributes=True)
+
+class UserUpdate(BaseModel):
+    student_id: Optional[StudentID] = None
+    name: Optional[NameStr] = None
+    email: Optional[EmailStr] = None
+    age: Optional[AgeInt] = None
+
 
  # Optionally return users with their projects
 class ProjectRead(BaseModel):
@@ -56,6 +63,10 @@ class ProjectCreateForUser(BaseModel):
 
 class ProjectReadWithOwner(ProjectRead):
     owner: Optional["UserRead"] = None # use selectinload(ProjectDB.owner) when querying
+
+class ProjectUpdate(BaseModel):
+    name: Optional[ProjectNameStr] = None
+    description: Optional[DescStr] = None
 
 # ---------- Courses ----------
 class CourseCreate(BaseModel):

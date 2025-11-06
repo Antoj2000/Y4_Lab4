@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, ForeignKey
+from sqlalchemy import String, Integer, ForeignKey, UniqueConstraint
 
 class Base(DeclarativeBase):
     pass
@@ -17,6 +17,7 @@ class UserDB(Base):
 
 
 # A) Related table (one-to-many relationship with UserDB -one user could have many projects)
+# UniqueConstraint is added to ensure users cannot have more than 1 project with the same name
 class ProjectDB(Base):
     __tablename__ = "projects"
     id: Mapped[int] = mapped_column(primary_key=True)
